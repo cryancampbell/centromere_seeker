@@ -18,7 +18,8 @@ seqinput=$2
 ##add if loop here to turn fastq into fasta (grep out the ">" rows)
 charcheck=`head -n3 $seqinput | tail -n1 | cut -c1`
 
-if [ $charcheck = "+" ]; then 
+#if [ $charcheck = "+" ]; then
+if [ $charcheck -ne ">" ]; then 
 	echo input is fastq
 	echo converting to fasta
 	cat $seqinput | grep "@" -A1 | sed 's,@,>,g' | grep [">"ACTG] > input.fasta

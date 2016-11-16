@@ -10,13 +10,30 @@
 #and R (https://www.r-project.org/) installed
 
 #INPUTS
-#seq file from PacBio
-fastqinput=$1
+#location of trf
+#seq file (fasta or fastq)
+TRF=$1
+seqinput=$2
+
+##add if loop here to turn fastq into fasta (grep out the ">" rows)
+charcheck=`head -n3 mmurPB_1000seqs.fastq | tail -n1 | cut -c1`
+
+if [ $charcheck = "+" ]; then 
+	echo input is fastq
+	echo converting to fasta
+	cat $seqinput | grep "@" -A1 | sed 's,@,>,g' | grep [">"ACTG] > input.fasta
+	seqinput="input.fasta"
+fi
+
+head input.fasta | cut -c1-80
 
 #rm *dat
 
 #STEP 1 RUN TRF
-#trf409.linux64 $fastqinput 2 5 7 80 10 50 2000 -l 6
+#
+$TRF $seqinput 2 5 7 80 10 50 2000 -l 6
+#
+#trf409.linux64 $seqinput 2 5 7 80 10 50 2000 -l 6
 
 trfoutput=`ls *dat`
 
@@ -41,6 +58,8 @@ do
 	done
 	m=$((m+1)) 
 done
+
+rm input.fasta
 
 #add some R stuff, output a graph, take input perhaps? a guess as to the length of repeat?
 

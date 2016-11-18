@@ -54,11 +54,15 @@ charcheck=`head -n3 $seqinput | tail -n1 | cut -c1`
 
 #if statement writes fastq to fasta
 #if [ $charcheck = "+" ]; then
-if [ $charcheck -ne ">" ]; then 
+if [  $charcheck != ">"  ]; then 
+	if [[ $char != A && $char != G && $char != C && $char != T ]]; then
 	echo input is fastq
 	echo converting to fasta
 	cat $seqinput | grep "@" -A1 | sed 's,@,>,g' | grep [">"ACTG] > input.fasta
 	seqinput="input.fasta"
+	else
+	echo input is multi-line fasta
+	fi
 else
 	cat $seqinput > input.fasta
 fi

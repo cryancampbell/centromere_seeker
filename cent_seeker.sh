@@ -79,7 +79,9 @@ rm *dat
 
 $TRF input.fasta 2 5 7 80 10 50 2000 -h
 
+echo 
 echo "=========================TANDEM=REPEAT=FINDER=COMPLETE=================="
+echo
 
 ##flag to start here only (e.g. -d lists "dat" file, and if "dat" file exists start with it)
 
@@ -130,7 +132,9 @@ rm input.fasta
 R --slave -f ../centromere_seeker/snitch.R
 
 #ask user to assess the R plot and estimate centromere length
+echo
 echo "=======================PLOTTING=======COMPLETE=========================="
+echo
 echo Inspect the results, cent_seek_graph.pdf, "for" a pattern of repeats
 echo the occuring "in" multiples of decreasing height from left to right
 echo
@@ -140,7 +144,7 @@ echo This may be the length of your centromere, enter it here to proceed:
 
 read centLength
 
-echo So your centromere is $centLength "?"
+echo So your centromere is $centLength bases"?"
 echo
 echo I will gather repeats of that length from the trf output"!"
 
@@ -148,72 +152,23 @@ sleep 3
 
 #from user input, gather all the hits from trf into one csv
 
-#nOneBEG=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep -n ,$((centLength - 1)), | head -n1 | cut -d: -f1`
-nOneBEG=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | \ 
-	grep -n ,$((centLength - 1)), | head -n1 | cut -d: -f1`
-#echo $nOneBEG
-#nOneEND=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep -n ,$((centLength + 1)), | tail -n1 | cut -d: -f1`
-nOneEND=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | \	
-	grep -n ,$((centLength + 1)), | tail -n1 | cut -d: -f1`
-#echo $nOneEND
-
-if [ -z "$nOneBEG" ]; then 
-	if [ -z "$nOneEND"]; then
-		echo No Hits at 1x
-	else
-		#cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nOneEND'' >> cent_matches.csv
-		cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | \
-			awk 'NR=='$nOneEND'' >> cent_matches.csv
-	fi
-elif [ -z "$nOneEND" ]; then
-	#cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nOneBEG'' >> cent_matches.csv
-	cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | 	\
-		awk 'NR=='$nOneBEG'' >> cent_matches.csv
-else
-	#cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nOneBEG',NR=='$nOneEND'' >> cent_matches.csv
-	cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | 	\
-	awk 'NR=='$nOneBEG',NR=='$nOneEND'' >> cent_matches.csv
-fi
-
-nTwoBEG=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep -n ,$((2 * centLength - 2)), | head -n1 | cut -d: -f1`
-#echo $nTwoBEG
-nTwoEND=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep -n ,$((2 * centLength + 2)), | tail -n1 | cut -d: -f1`
-#echo $nTwoEND
-
-if [ -z "$nTwoBEG" ]; then 
-	if [ -z "$nTwoEND"]; then
-		echo No Hits at 2x
-	else
-		cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nTwoEND'' >> cent_matches.csv
-	fi
-elif [ -z "$nTwoEND" ]; then
-	cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nTwoBEG'' >> cent_matches.csv
-else
-	cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nTwoBEG',NR=='$nTwoEND'' >> cent_matches.csv
-fi
+##FIX##actually, should be iterating through the values here
 
 
-nFourBEG=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep -n ,$((4 * centLength - 4)), | head -n1 | cut -d: -f1`
-#echo $nFourBEG
-nFourEND=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep -n ,$((4 * centLength + 4)), | tail -n1 | cut -d: -f1`
-#echo $nFourEND
+seq $(( centLength - 1 )) $(( centLength + 1 )) > centLengths.list
+seq $(( 2 * centLength - 2 )) $(( 2 * centLength + 2 )) >> centLengths.list
+seq $(( 4 * centLength - 4 )) $(( 4 * centLength + 4 )) >> centLengths.list
 
-if [ -z "$nFourBEG" ]; then 
-	if [ -z "$nFourEND"]; then
-		echo No Hits at 4x
-	else
-		cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nFourEND'' >> cent_matches.csv
-	fi
-elif [ -z "$nFourEND" ]; then
-	cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nFourBEG'' >> cent_matches.csv
-else
-	cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | awk 'NR=='$nFourBEG',NR=='$nFourEND'' >> cent_matches.csv
-fi
 
-#finally, convert the trf centromere matches to two fasta files for aligning
+for l in `cat centLengths.list`
+do
+	hits=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep -c ,$l,[ACTG][ACTG]`
+	echo $l has $hits matches
+	cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep ,$l,[ACTG][ACTG] >> cent_matches.csv
+done
+
 cat cent_matches.csv | cut -d, -f1,2,3,4,5 | sed 's/,/_/g' | sed 's/^/>/g' | \
 	sed 's,_\([GCAT]\),\n\1,g' > centromere_pattern_length_matches.fasta
 cat cent_matches.csv | cut -d, -f1,2,3,4,6 | sed 's/,/_/g' | sed 's/^/>/g' | \
 	sed 's,_\([GCAT]\),\n\1,g' > centromere_full_length_matches.fasta
-
 

@@ -48,7 +48,7 @@
 
 
 
-
+#usage function to output instruction/manual/help page
 usage()
 {
 cat << EOF
@@ -77,6 +77,7 @@ OPTIONS:
 EOF
 }
 
+#define some variables for use later
 TRF=
 SEQUENCE=
 DAT=
@@ -85,6 +86,7 @@ MODE=
 CENTLENGTH=
 VERBOSE=0
 
+#check flags for input, assign input to appropriate variable
 while getopts “:ht:s:d:c:l:vm:” OPTION
 do
      case $OPTION in
@@ -126,12 +128,14 @@ do
      esac
 done
 
+#confirm verbose mode
 if [[ $VERBOSE = 0 ]]; then
-	echo running in non-verbose mode... it said quietly
+	echo running in non-verbose mode... (it said quietly)
 else
 	echo running in VERBOSE mode!
 fi
 
+#set of error messages for mis-used flags, no mode listed, incorrect options for a given mode
 if [[ -z $MODE ]]; then
 	echo ===ERROR=== - No mode listed
 	echo Please use one of the prescribed modes listed in the help menu
@@ -182,19 +186,17 @@ if [[ -z $MODE ]]; then
  		usage
  		exit 1
  	fi
- 	#THIS SPACE CAN BE USED FOR OTHER ERRORS (mode = full, check for trf; mode = convert, check for dat)
  fi
  
  #error checking has passed, and only satisfactory variable combinations should go past here
- echo proceed to program
+ echo proceeding to cent_seeker script
 
 ###RUN TRF AND OUTPUT DAT FILE
  if [[ $MODE = "full" || $MODE = "trf" ]]; then
  	#check character to determine fasta/fastq
 	charcheck=`head -n3 $SEQUENCE | tail -n1 | cut -c1`
 
-	#if statement writes fastq to fasta
-	#if [ $charcheck = "+" ]; then
+	#if statement writes fastq to fasta for trf
 	if [  $charcheck != ">"  ]; then 
 		if [[ $char != A && $char != G && $char != C && $char != T ]]; then
 		echo input is fastq
@@ -208,16 +210,16 @@ if [[ -z $MODE ]]; then
 		cat $SEQUENCE > input.fasta
 	fi
 
-	#output the input file so the user can see
+	#cat a few lines of the input file so the user can see
 	head input.fasta | cut -c1-80
 
 	echo above is the fasta sequence from your input "file"
 	sleep 5 
 
+	#remove the current/previous trf output
 	rm input.fasta.2.5.7.80.10.50.2000.dat
 
 	#Run tandem repeat finder
-
 	$TRF input.fasta 2 5 7 80 10 50 2000 -h
 
 	echo 
@@ -241,16 +243,17 @@ if [[ -z $MODE ]]; then
 	#number of trf hits to loop through
 	totContigs=`wc -l contig_line.count | cut -d" " -f1`
 
-	#show this number to the user, so they know how many to expect
-	#there's gotta be a better way to do this... % finished, 1/100 hits or something
-	#for z in `seq 1 $totContigs`
-	#do
-	#	echo -n "_"
-	#	sleep .01
-	#done
-	echo
+	#echo -ne '#####                     (33%)\r'
+	#sleep 1
+	#echo -ne '#############             (66%)\r'
+	#sleep 1
+	#echo -ne '#######################   (100%)\r'
+	#echo -ne '\n'
 
-	#go through the trf hits and write them to csv, echoing a "." to show progress
+
+	#go through the trf hits and write them to csv, 
+	#need to add a progress bar here, 5%, 10%... 100%
+	
 	for start in `cat contig_line.count`
 	do
 		endplus=`cat contig_line.count | awk 'NR=='$m''`
@@ -280,6 +283,7 @@ if [[ -z $MODE ]]; then
 	echo "=======================PLOTTING=======COMPLETE=========================="
 	echo
 
+	#if no centromere length given in flag, ask in prompt
 	if [[ -z $CENTLENGTH ]]; then
 
 		echo Inspect the results, cent_seek_graph.pdf, "for" a pattern of repeats
@@ -289,7 +293,7 @@ if [[ -z $MODE ]]; then
 		echo peak"?"
 		echo This may be the length of your centromere, enter it here to proceed:
 
-		read CENTLENGTH ##FIX VAR NAME
+		read CENTLENGTH
 	fi
 
 	echo So your centromere is $CENTLENGTH bases"?"
@@ -299,7 +303,8 @@ if [[ -z $MODE ]]; then
 	sleep 3
  fi
 
-###GET THE LENGHT MATCHED READS INTO A FASTA
+###GET THE LENGTH MATCHED READS INTO A FASTA
+
  if [[ $MODE = "extract" || $MODE = "full" || $MODE = "posttrf"  ]]; then
  	seq $(( CENTLENGTH - 1 )) $(( CENTLENGTH + 1 )) > centLengths.list
 	seq $(( 2 * CENTLENGTH - 2 )) $(( 2 * CENTLENGTH + 2 )) >> centLengths.list

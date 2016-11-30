@@ -241,15 +241,10 @@ if [[ -z $MODE ]]; then
 	m=2
 
 	#number of trf hits to loop through
-	totContigs=`wc -l contig_line.count | cut -d" " -f1`
-
-	#echo -ne '#####                     (33%)\r'
-	#sleep 1
-	#echo -ne '#############             (66%)\r'
-	#sleep 1
-	#echo -ne '#######################   (100%)\r'
-	#echo -ne '\n'
-
+	totContigs=`wc -l trf_all_hits.csv | sed 's,trf_all_hits.csv,,g' | sed 's, ,,g'`
+	fivePer=$(( totContigs / 20 ))
+	count=1
+	perCount=0
 
 	#go through the trf hits and write them to csv, 
 	#need to add a progress bar here, 5%, 10%... 100%
@@ -259,7 +254,7 @@ if [[ -z $MODE ]]; then
 		endplus=`cat contig_line.count | awk 'NR=='$m''`
 		end=$((endplus - 1))
 		contig=`cat $DAT | awk 'NR=='$start'' | cut -d: -f2 | sed 's, ,,g'`
-		echo -n "."
+		#echo -n "."
 		cat $DAT | awk 'NR=='$start',NR=='$end'' | grep [ACTG] | 		\
 			grep -v Sequence | cut -d" " -f1,2,3,4,5,14,15 | sed 's/ /,/g'  \
 			| head > trf_hits.tmp
@@ -267,7 +262,19 @@ if [[ -z $MODE ]]; then
 		do 
 			echo $contig,$h >> trf_all_hits.csv
 		done
+
+		#counter for awking through trf output
 		m=$((m+1)) 
+
+		#this if loop prints a progress message at 5, 10, 15% etc
+		if [[ `expr $count % $fivePer` = 0 ]]; then 
+			echo $((5 * perCount))% done
+			perCount=$((perCount+1))
+		fi
+
+		#counter for the overall progress loop
+		count=$((count+1));
+
 	done
 	echo
  fi

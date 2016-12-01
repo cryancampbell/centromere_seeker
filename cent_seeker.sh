@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #centromere_seeker
-#version 2.0 -- 161121
+#version 2.1 -- 161201
 
 #this script looks for long repeats in pacbio data with trf
 #and plots them visually to isolate potential centromeric
@@ -40,9 +40,13 @@
 #if so, that repeat may be very common in the genome of interest which may be 
 #indicative of a centromeric repeat.
 
+#cent_seeker_v2.1.sh -- 161201
+#implemented v2.1
+#	-verbose flag operational
+#	-commenting complete
 
-#cent_seeker_v2.0.sh
-#implemented
+#cent_seeker_v2.0.sh -- 161121
+#implemented v2.0
 #	-the ability to pass flags into the program
 #	-broke the program into parts that can be run separately
 
@@ -130,67 +134,84 @@ done
 
 #confirm verbose mode
 if [[ $VERBOSE = 0 ]]; then
-	echo running in non-verbose mode... (it said quietly)
+	echo running in non-verbose mode... it said quietly
 else
 	echo running in VERBOSE mode!
 fi
 
+echo
+echo
+echo
+echo
+echo
+
 #set of error messages for mis-used flags, no mode listed, incorrect options for a given mode
 if [[ -z $MODE ]]; then
-	echo ===ERROR=== - No mode listed
-	echo Please use one of the prescribed modes listed in the help menu
+	echo "===ERROR=== - No mode listed"
+	echo "Please use one of the prescribed modes listed in the help menu"
+	echo
      usage
      exit 1
  elif [[ $MODE != "full" && $MODE != "trf" && $MODE != "posttrf" && $MODE != "convert" && $MODE != "plot" && $MODE != "extract"  ]]; then
-     echo ===ERROR=== - Mode not found
-     echo Please use one of the prescribed modes listed in the help menu below
+     echo "===ERROR=== - Mode not found"
+     echo "Please use one of the prescribed modes listed in the help menu below"
+     echo
      usage
      exit 1
  elif [[ $MODE = "full" || $MODE = "trf" ]]; then
  	if  [[ -z $TRF ]]; then
- 		echo ===ERROR=== need TRF path, -t flag
+ 		echo "===ERROR=== need TRF path, -t flag"
+ 		echo
  		usage
  		exit 1
  	elif [[ -z $SEQUENCE ]]; then
- 		echo ===ERROR=== need sequence input, -s flag
+ 		echo "===ERROR=== need sequence input, -s flag"
+ 		echo
  		usage
  		exit 1
  	elif [[ $VERBOSE = 0 && -z $CENTLENGTH && $MODE = "full" ]]; then
- 		echo ===ERROR=== to run in silent mode centromere length hypothesis is required, -l flag
+ 		echo "===ERROR=== to run in silent mode centromere length hypothesis is required, -l flag"
+ 		echo
  		usage
  		exit 1
  	fi
  elif [[ $MODE = "posttrf" || $MODE = "convert" ]]; then
  	if  [[ -z $DAT ]]; then
- 		echo ===ERROR=== need .dat file, -d flag
+ 		echo "===ERROR=== need .dat file, -d flag"
+ 		echo
  		usage
  		exit 1
  	elif [[ $VERBOSE = 0 && -z $CENTLENGTH && $MODE = "posttrf" ]]; then
- 		echo ===ERROR=== to run in silent mode centromere length hypohthesis is required, -l flag
+ 		echo "===ERROR=== to run in silent mode centromere length hypohthesis is required, -l flag"
+ 		echo
  		usage
  		exit 1
  	fi
  elif [[ $MODE = "extract" ]]; then
  	if  [[ -z $CSV ]]; then
- 		echo ===ERROR=== need .csv file, -c flag
+ 		echo "===ERROR=== need .csv file, -c flag"
+ 		echo
  		usage
  		exit 1
  	elif [[ -z $CENTLENGTH ]]; then
- 		echo ===ERROR=== centromere length hypohthesis is required, -l flag
+ 		echo "===ERROR=== centromere length hypothesis is required, -l flag"
+ 		echo
  		usage
  		exit 1
  	fi
  elif [[ $MODE = "plot" ]]; then
  	if  [[ -z $CSV ]]; then
- 		echo ===ERROR=== need .csv file, -c flag
+ 		echo "===ERROR=== need .csv file, -c flag"
+ 		echo
  		usage
  		exit 1
  	fi
  fi
  
  #error checking has passed, and only satisfactory variable combinations should go past here
- echo proceeding to cent_seeker script
-
+ if [[ $VERBOSE = 1 ]]; then
+ echo "Proceeding to cent_seeker script"
+ fi
 ###RUN TRF AND OUTPUT DAT FILE
  if [[ $MODE = "full" || $MODE = "trf" ]]; then
  	#check character to determine fasta/fastq
@@ -199,39 +220,57 @@ if [[ -z $MODE ]]; then
 	#if statement writes fastq to fasta for trf
 	if [  $charcheck != ">"  ]; then 
 		if [[ $char != A && $char != G && $char != C && $char != T ]]; then
-		echo input is fastq
-		echo converting to fasta
-		cat $SEQUENCE | grep "@" -A1 | sed 's,@,>,g' | grep [">"ACTG] > input.fasta
-		SEQUENCE="input.fasta"
-		else
-		echo input is multi-line fasta
+			if [[ $VERBOSE = 1 ]]; then
+				echo "input is fastq"
+				echo "converting to fasta"
+			fi
+			cat $SEQUENCE | grep "@" -A1 | sed 's,@,>,g' | grep [">"ACTG] > input.fasta
+			SEQUENCE="input.fasta"
+			else
+				if [[ $VERBOSE = 1 ]]; then
+				echo "input is multi-line fasta"
+				fi
 		fi
 	else
 		cat $SEQUENCE > input.fasta
 	fi
 
 	#cat a few lines of the input file so the user can see
-	head input.fasta | cut -c1-80
-
-	echo above is the fasta sequence from your input "file"
-	sleep 5 
+	if [[ $VERBOSE = 1 ]]; then
+		head input.fasta | cut -c1-80
+		echo "above is 80 characters from the first 10 lines of sequence from your input file"
+		sleep 5 
+	fi
 
 	#remove the current/previous trf output
 	rm input.fasta.2.5.7.80.10.50.2000.dat
 
+	#run TRF verbose or not
+	if [[ $VERBOSE = 1 ]]; then
+		$TRF input.fasta 2 5 7 80 10 50 2000 -h
+	else
+		$TRF input.fasta 2 5 7 80 10 50 2000 -h >/dev/null 2>/dev/null
+	fi
+
 	#Run tandem repeat finder
-	$TRF input.fasta 2 5 7 80 10 50 2000 -h
+	#$TRF input.fasta 2 5 7 80 10 50 2000 -h >/dev/null
 
-	echo 
-	echo "=========================TANDEM=REPEAT=FINDER=COMPLETE=================="
-	echo
+	if [[ $VERBOSE = 1 ]]; then
+		echo 
+		echo "=========================TANDEM=REPEAT=FINDER=COMPLETE=================="
+		echo
+	fi
 
-	DAT=`ls input.fasta.2.5.7.80.10.50.2000.dat` #DAT swap for trfoutput
+	DAT=`ls input.fasta.2.5.7.80.10.50.2000.dat`
 	rm input.fasta
  fi
 
 ###CONVERT DAT FILE TO CSV 
  if [[ $MODE = "convert" || $MODE = "full" || $MODE = "posttrf" ]]; then
+
+ 	if [[ $VERBOSE = 1 ]]; then
+ 		echo "converting .dat file into searchable .csv"
+ 	fi
 
 	#count the trf hits
 	grep -n Sequence $DAT | cut -d: -f1 > contig_line.count
@@ -241,7 +280,7 @@ if [[ -z $MODE ]]; then
 	m=2
 
 	#number of trf hits to loop through
-	totContigs=`wc -l trf_all_hits.csv | sed 's,trf_all_hits.csv,,g' | sed 's, ,,g'`
+	totContigs=`wc -l contig_line.count | sed 's,contig_line.count,,g' | sed 's, ,,g'`
 	fivePer=$(( totContigs / 20 ))
 	count=1
 	perCount=0
@@ -254,10 +293,11 @@ if [[ -z $MODE ]]; then
 		endplus=`cat contig_line.count | awk 'NR=='$m''`
 		end=$((endplus - 1))
 		contig=`cat $DAT | awk 'NR=='$start'' | cut -d: -f2 | sed 's, ,,g'`
-		#echo -n "."
+		
 		cat $DAT | awk 'NR=='$start',NR=='$end'' | grep [ACTG] | 		\
 			grep -v Sequence | cut -d" " -f1,2,3,4,5,14,15 | sed 's/ /,/g'  \
 			| head > trf_hits.tmp
+		
 		for h in `cat trf_hits.tmp`
 		do 
 			echo $contig,$h >> trf_all_hits.csv
@@ -266,17 +306,23 @@ if [[ -z $MODE ]]; then
 		#counter for awking through trf output
 		m=$((m+1)) 
 
-		#this if loop prints a progress message at 5, 10, 15% etc
-		if [[ `expr $count % $fivePer` = 0 ]]; then 
-			echo $((5 * perCount))% done
-			perCount=$((perCount+1))
+		if [[ $VERBOSE = 1 ]]; then
+			#this if loop prints a progress message at 5, 10, 15% etc
+			if [[ $fivePer != 0 ]]; then
+				if [[ `expr $count % $fivePer` = 0 ]]; then 
+					echo $((5 * perCount))% done
+					perCount=$((perCount+1))
+				fi
+			fi
 		fi
 
 		#counter for the overall progress loop
-		count=$((count+1));
+		count=$((count+1))
 
 	done
-	echo
+	if [[ $VERBOSE = 1 ]]; then
+		echo "100% done"
+	fi
  fi
 
 ###PLOT A GRAPH IN R
@@ -285,29 +331,35 @@ if [[ -z $MODE ]]; then
  	#Use R to plot the results, and print to file
 	R --slave -f ./snitch.R
 
+
+	if [[ $VERBOSE = 1 ]]; then
 	#ask user to assess the R plot and estimate centromere length
 	echo
 	echo "=======================PLOTTING=======COMPLETE=========================="
 	echo
-
-	#if no centromere length given in flag, ask in prompt
-	if [[ -z $CENTLENGTH ]]; then
-
-		echo Inspect the results, cent_seek_graph.pdf, "for" a pattern of repeats
-		echo the occuring "in" multiples of decreasing height from left to right
-		echo
-		echo If you see a pattern, what is the x-axis value of the shortest and tallest
-		echo peak"?"
-		echo This may be the length of your centromere, enter it here to proceed:
-
-		read CENTLENGTH
 	fi
+	
+	if [[ $VERBOSE = 1 ]]; then
 
-	echo So your centromere is $CENTLENGTH bases"?"
-	echo
-	echo I will gather repeats of that length from the trf output"!"
+		#if no centromere length given in flag, ask in prompt
+		if [[ -z $CENTLENGTH ]]; then
 
-	sleep 3
+			echo Inspect the results, cent_seek_graph.pdf, "for" a pattern of repeats
+			echo the occuring "in" multiples of decreasing height from left to right
+			echo
+			echo If you see a pattern, what is the x-axis value of the shortest and tallest
+			echo peak"?"
+			echo This may be the length of your centromere, enter it here to proceed:
+
+			read CENTLENGTH
+		fi
+
+		echo So your centromere is $CENTLENGTH bases"?"
+		echo
+		echo I will gather repeats of that length from the trf output"!"
+
+		sleep 3
+	fi
  fi
 
 ###GET THE LENGTH MATCHED READS INTO A FASTA
@@ -318,10 +370,15 @@ if [[ -z $MODE ]]; then
 	seq $(( 4 * CENTLENGTH - 4 )) $(( 4 * CENTLENGTH + 4 )) >> centLengths.list
 
 	#for each length collect the hits into a single csv
+	totalHits=0
+
 	for l in `cat centLengths.list`
 	do
 		hits=`cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep -c ,$l,[ACTG][ACTG]`
-		echo $l has $hits matches
+		if [[ $VERBOSE = 1 ]]; then
+			echo $l has $hits matches
+		fi
+		totalHits=$((totalHits + hits))
 		cat trf_all_hits.csv | cut -d, -f1,2,3,6,7,8 | sort -k4 -t, -n | grep ,$l,[ACTG][ACTG] >> cent_matches.csv
 	done
 
@@ -332,3 +389,5 @@ if [[ -z $MODE ]]; then
 		sed 's,_\([GCAT]\),\n\1,g' > centromere_full_length_matches.fasta
 
  fi
+
+ echo cent_seeker is DONE, $totalHits potential centromeric sequences found!

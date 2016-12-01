@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #centromere_seeker
-#version 2.0 -- 161121
+#version 2.1 -- 161201
 
 #this script looks for long repeats in pacbio data with trf
 #and plots them visually to isolate potential centromeric
@@ -40,9 +40,13 @@
 #if so, that repeat may be very common in the genome of interest which may be 
 #indicative of a centromeric repeat.
 
+#cent_seeker_v2.1.sh -- 161201
+#implemented v2.1
+#	-verbose flag operational
+#	-commenting complete
 
-#cent_seeker_v2.0.sh
-#implemented
+#cent_seeker_v2.0.sh -- 161121
+#implemented v2.0
 #	-the ability to pass flags into the program
 #	-broke the program into parts that can be run separately
 
